@@ -7,7 +7,6 @@ use Heptacom\HeptaConnect\Dataset\Base\Contract\DatasetEntityContract;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Product\Category;
 use Heptacom\HeptaConnect\Portal\Base\Emission\Contract\EmitContextInterface;
 use Heptacom\HeptaConnect\Portal\Base\Emission\Contract\EmitterContract;
-use Heptacom\HeptaConnect\Portal\Base\Mapping\Contract\MappingInterface;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Packer\CategoryPacker;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Support\AmiiboApiClient;
 
@@ -18,9 +17,9 @@ class CategoryEmitter extends EmitterContract
         return Category::class;
     }
 
-    protected function run(MappingInterface $mapping, EmitContextInterface $context): ?DatasetEntityContract
+    protected function run(string $externalId, EmitContextInterface $context): ?DatasetEntityContract
     {
-        $primaryKey = (array) \json_decode($mapping->getExternalId(), true, 5, \JSON_THROW_ON_ERROR);
+        $primaryKey = (array) \json_decode($externalId, true, 5, \JSON_THROW_ON_ERROR);
         $pkType = (string) $primaryKey['type'];
         $pkId = (string) $primaryKey['id'];
 
@@ -34,7 +33,7 @@ class CategoryEmitter extends EmitterContract
         switch ($pkType) {
             case 'root':
                 $payload = [
-                    'key' => $mapping->getExternalId(),
+                    'key' => $externalId,
                     'name' => $pkId,
                 ];
                 break;

@@ -7,7 +7,6 @@ use Heptacom\HeptaConnect\Dataset\Base\Contract\DatasetEntityContract;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Product\Product;
 use Heptacom\HeptaConnect\Portal\Base\Emission\Contract\EmitContextInterface;
 use Heptacom\HeptaConnect\Portal\Base\Emission\Contract\EmitterContract;
-use Heptacom\HeptaConnect\Portal\Base\Mapping\Contract\MappingInterface;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Packer\MediaPacker;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Packer\ProductPacker;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Support\AmiiboApiClient;
@@ -19,9 +18,8 @@ class ProductEmitter extends EmitterContract
         return Product::class;
     }
 
-    protected function run(MappingInterface $mapping, EmitContextInterface $context): ?DatasetEntityContract
+    protected function run(string $externalId, EmitContextInterface $context): ?DatasetEntityContract
     {
-        $primaryKey = $mapping->getExternalId();
         $container = $context->getContainer();
         /** @var ProductPacker $productPacker */
         $productPacker = $container->get(ProductPacker::class);
@@ -29,7 +27,7 @@ class ProductEmitter extends EmitterContract
         $mediaPacker = $container->get(MediaPacker::class);
         /** @var AmiiboApiClient $client */
         $client = $container->get(AmiiboApiClient::class);
-        $amiibo = $client->getAmiibo($primaryKey);
+        $amiibo = $client->getAmiibo($externalId);
         $result = $productPacker->pack($amiibo);
 
         $this->attachMedia($mediaPacker, $client, $amiibo['image'], $result);
