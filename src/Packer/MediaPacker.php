@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace NiemandOnline\HeptaConnect\Portal\Amiibo\Packer;
 
-use Heptacom\HeptaConnect\Core\Storage\Struct\SerializableStream;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Media\Media;
 use Heptacom\HeptaConnect\Portal\Base\Serialization\Contract\NormalizationRegistryContract;
+use Heptacom\HeptaConnect\Portal\Base\Serialization\Contract\SerializableStream;
 use Psr\Http\Message\ResponseInterface;
 
 class MediaPacker
