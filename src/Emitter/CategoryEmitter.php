@@ -12,6 +12,16 @@ use NiemandOnline\HeptaConnect\Portal\Amiibo\Support\AmiiboApiClient;
 
 class CategoryEmitter extends EmitterContract
 {
+    private AmiiboApiClient $client;
+
+    private CategoryPacker $packer;
+
+    public function __construct(AmiiboApiClient $client, CategoryPacker $packer)
+    {
+        $this->client = $client;
+        $this->packer = $packer;
+    }
+
     public function supports(): string
     {
         return Category::class;
@@ -22,12 +32,6 @@ class CategoryEmitter extends EmitterContract
         $primaryKey = (array) \json_decode($externalId, true, 5, \JSON_THROW_ON_ERROR);
         $pkType = (string) $primaryKey['type'];
         $pkId = (string) $primaryKey['id'];
-
-        $container = $context->getContainer();
-        /** @var CategoryPacker $packer */
-        $packer = $container->get(CategoryPacker::class);
-        /** @var AmiiboApiClient $client */
-        $client = $container->get(AmiiboApiClient::class);
         $payload = [];
 
         switch ($pkType) {
@@ -38,7 +42,7 @@ class CategoryEmitter extends EmitterContract
                 ];
                 break;
             case 'character':
-                $payload = $client->getCharacter($pkId);
+                $payload = $this->client->getCharacter($pkId);
                 $payload['key'] = \json_encode([
                     'type' => 'character',
                     'id' => $payload['key'],
@@ -49,7 +53,7 @@ class CategoryEmitter extends EmitterContract
                 ]);
                 break;
             case 'type':
-                $payload = $client->getType($pkId);
+                $payload = $this->client->getType($pkId);
                 $payload['key'] = \json_encode([
                     'type' => 'type',
                     'id' => $payload['key'],
@@ -61,6 +65,6 @@ class CategoryEmitter extends EmitterContract
                 break;
         }
 
-        return $packer->pack($payload);
+        return $this->packer->pack($payload);
     }
 }
