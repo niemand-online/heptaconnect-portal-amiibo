@@ -47,19 +47,5 @@ class CategoryExplorer extends ExplorerContract
             ]),
             $client->getTypeIds()
         );
-        yield from \array_map(
-            static fn (string $id): string => \json_encode([
-                'type' => 'serie',
-                'id' => $id,
-            ]),
-            $client->getSerieIds()
-        );
-        yield from \array_map(
-            static fn (string $id): string => \json_encode([
-                'type' => 'gameserie',
-                'id' => $id,
-            ]),
-            $client->getGameSerieIds()
-        );
     }
 }

@@ -59,29 +59,6 @@ class CategoryEmitter extends EmitterContract
                     'id' => 'type',
                 ]);
                 break;
-            case 'serie':
-                $payload = $client->getSerie($pkId);
-                $payload['key'] = \json_encode([
-                    'type' => 'serie',
-                    'id' => $payload['key'],
-                ]);
-                $payload['parent'] = \json_encode([
-                    'type' => 'root',
-                    'id' => 'serie',
-                ]);
-                break;
-            case 'gameserie':
-                $payload = $client->getGameSerie($pkId);
-                $payload['key'] = \json_encode([
-                    'type' => 'gameserie',
-                    'id' => $payload['key'],
-                ]);
-                $payload['parent'] = \json_encode([
-                    'type' => 'root',
-                    'id' => 'gameserie',
-                ]);
-                break;
-
         }
 
         return $packer->pack($payload);
