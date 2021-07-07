@@ -37,11 +37,33 @@ class AmiiboApiClient
 
     public function getCharacterIds(): array
     {
+        if ($this->configPreview) {
+            $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
+            $amiibos = $this->unwrapResponse($this->client->sendRequest($request)) ?? [];
+            $result = \array_unique(\array_column(\array_slice($amiibos, 0, $this->configPreviewLimit), 'character'));
+
+            return \array_map(
+                fn (string $name): string => $this->requestResourceIdByName('character', $name),
+                $result
+            );
+        }
+
         return \array_keys($this->requestKeyValue('character'));
     }
 
     public function getTypeIds(): array
     {
+        if ($this->configPreview) {
+            $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
+            $amiibos = $this->unwrapResponse($this->client->sendRequest($request)) ?? [];
+            $result = \array_unique(\array_column(\array_slice($amiibos, 0, $this->configPreviewLimit), 'type'));
+
+            return \array_map(
+                fn (string $name): string => $this->requestResourceIdByName('type', $name),
+                $result
+            );
+        }
+
         return \array_keys($this->requestKeyValue('type'));
     }
 
@@ -58,30 +80,13 @@ class AmiiboApiClient
     public function getAmiiboIds(): array
     {
         $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
-        $response = $this->client->sendRequest($request);
+        $amiibos = $this->unwrapResponse($this->client->sendRequest($request)) ?? [];
 
-        if (300 <= $response->getStatusCode() || $response->getStatusCode() < 200) {
-            return [];
-        }
-
-        $characterData = \json_decode(
-            $response->getBody()->getContents(),
-            true,
-            50,
-            \JSON_THROW_ON_ERROR
-        );
-
-        if (!\is_array($characterData) || $characterData === []) {
-            return [];
-        }
-
-        $result = [];
-
-        foreach ($characterData['amiibo'] as $amiibo) {
+        foreach ($amiibos as $amiibo) {
             $result[] = $amiibo['head'].$amiibo['tail'];
         }
 
-        return $this->configPreview ? \array_slice($result, 0, $this->configPreviewLimit) : $result;
+        return $this->configPreview ? \array_slice($result, 0, $this->configPreviewLimit, true) : $result;
     }
 
     public function getAmiibo(string $id): array
@@ -90,24 +95,11 @@ class AmiiboApiClient
             'id' => $id,
             'showusage' => '',
         ]));
-        $response = $this->client->sendRequest($request);
+        $amiibo = $this->unwrapResponse($this->client->sendRequest($request));
 
-        if (300 <= $response->getStatusCode() || $response->getStatusCode() < 200) {
+        if ($amiibo === null) {
             return [];
         }
-
-        $characterData = \json_decode(
-            $response->getBody()->getContents(),
-            true,
-            50,
-            \JSON_THROW_ON_ERROR
-        );
-
-        if (!\is_array($characterData) || $characterData === []) {
-            return [];
-        }
-
-        $amiibo = (array) $characterData['amiibo'];
 
         $amiibo['characterId'] = $this->requestResourceIdByName('character', (string) $amiibo['character']);
         $amiibo['typeId'] = $this->requestResourceIdByName('type', (string) $amiibo['type']);
@@ -131,19 +123,8 @@ class AmiiboApiClient
         $request = $this->requestFactory->createRequest('GET', $this->getUri($resource, [
             'name' => $name,
         ]));
-        $response = $this->client->sendRequest($request);
 
-        if (300 <= $response->getStatusCode() || $response->getStatusCode() < 200) {
-            return null;
-        }
-
-        $data = \json_decode($response->getBody()->getContents(), true, 5, \JSON_THROW_ON_ERROR);
-
-        if (!\is_array($data) || $data === []) {
-            return null;
-        }
-
-        return $data['amiibo'][0]['key'] ?? null;
+        return $this->unwrapResponse($this->client->sendRequest($request))[0]['key'] ?? null;
     }
 
     protected function requestResource(string $resource, string $key): array
@@ -151,46 +132,36 @@ class AmiiboApiClient
         $request = $this->requestFactory->createRequest('GET', $this->getUri($resource, [
             'key' => $key,
         ]));
-        $response = $this->client->sendRequest($request);
 
-        if (300 <= $response->getStatusCode() || $response->getStatusCode() < 200) {
-            return [];
-        }
-
-        $data = \json_decode($response->getBody()->getContents(), true, 5, \JSON_THROW_ON_ERROR);
-
-        if (!\is_array($data) || $data === []) {
-            return [];
-        }
-
-        return (array) $data['amiibo'];
+        return $this->unwrapResponse($this->client->sendRequest($request)) ?? [];
     }
 
     protected function requestKeyValue(string $resource): array
     {
         $request = $this->requestFactory->createRequest('GET', $this->getUri($resource));
-        $response = $this->client->sendRequest($request);
 
+        return \array_column($this->unwrapResponse($this->client->sendRequest($request)) ?? [], 'name', 'key');
+    }
+
+    protected function unwrapResponse(ResponseInterface $response): ?array
+    {
         if (300 <= $response->getStatusCode() || $response->getStatusCode() < 200) {
-            return [];
+            return null;
         }
 
         $data = \json_decode($response->getBody()->getContents(), true, 5, \JSON_THROW_ON_ERROR);
 
         if (!\is_array($data) || $data === []) {
-            return [];
+            return null;
         }
 
         $amiiboData = $data['amiibo'];
 
         if (!\is_array($amiiboData) || $amiiboData === []) {
-            return [];
+            return null;
         }
 
-        return \array_combine(
-            \array_column($amiiboData, 'key'),
-            \array_column($amiiboData, 'name')
-        );
+        return $amiiboData;
     }
 
     protected function getUri(string $path, array $params = []): UriInterface

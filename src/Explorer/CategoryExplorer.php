@@ -29,8 +29,6 @@ class CategoryExplorer extends ExplorerContract
             [
                 'character',
                 'type',
-                'serie',
-                'gameserie',
             ]
         );
         yield from \array_map(
