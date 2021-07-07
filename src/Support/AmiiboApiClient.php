@@ -17,14 +17,22 @@ class AmiiboApiClient
 
     private UriFactoryInterface $uriFactory;
 
+    private bool $configPreview;
+
+    private int $configPreviewLimit;
+
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
-        UriFactoryInterface $uriFactory
+        UriFactoryInterface $uriFactory,
+        bool $configPreview,
+        int $configPreviewLimit
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
+        $this->configPreview = $configPreview;
+        $this->configPreviewLimit = $configPreviewLimit;
     }
 
     public function getCharacterIds(): array
@@ -73,7 +81,7 @@ class AmiiboApiClient
             $result[] = $amiibo['head'].$amiibo['tail'];
         }
 
-        return $result;
+        return $this->configPreview ? \array_slice($result, 0, $this->configPreviewLimit) : $result;
     }
 
     public function getAmiibo(string $id): array
