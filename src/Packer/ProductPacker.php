@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace NiemandOnline\HeptaConnect\Portal\Amiibo\Packer;
 
+use Heptacom\HeptaConnect\Dataset\Ecommerce\Price\Condition\ValidityPeriodCondition;
+use Heptacom\HeptaConnect\Dataset\Ecommerce\Price\Price;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Product\Category;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Product\Product;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Tax\TaxGroup;
@@ -26,6 +28,19 @@ class ProductPacker
             $this->getCategoryReference('type', $source['typeId'] ?? null),
             $this->getCategoryReference('character', $source['characterId'] ?? null),
         ]);
+
+        $price = new Price();
+        $price->setPrimaryKey($result->getPrimaryKey());
+        $price->setGross(19.99);
+        $price->setNet(19.99 / 1.19);
+        $price->setTaxStatus(Price::TAX_STATUS_GROSS);
+
+        $validationPeriod = new ValidityPeriodCondition();
+        $validationPeriod->setBegin(\date_create_from_format('U', '0'));
+
+        $price->getConditions()->push([$validationPeriod]);
+
+        $result->getPrices()->push([$price]);
 
         return $result;
     }
