@@ -3,6 +3,9 @@
 
 Ever wanted to have Amiibo flood your HEPTAconnect instance? Just setup this portal and import all the toys from [Amiibo API](https://amiiboapi.com/).
 
+Read, understand and follow the terms and conditions when using this API via HEPTAconnect [Amiibo API ToC](https://amiiboapi.com/docs/#termscondition).
+This is a reference implementation how one could consume the Amiibo API.
+
 
 ## System requirements
 
