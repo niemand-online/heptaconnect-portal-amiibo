@@ -92,22 +92,37 @@ class AmiiboApiClient
         return $this->configPreview ? \array_slice($result, 0, $this->configPreviewLimit, true) : $result;
     }
 
-    public function getAmiibo(string $id): array
+    public function getAmiibos(array $ids): array
     {
-        $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo', [
-            'id' => $id,
-            'showusage' => '',
-        ]));
-        $amiibo = $this->cachedAndUnwrappedRequestExecution($request);
+        $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
+        $amiibos = $this->unwrapResponse($this->client->sendRequest($request)) ?? [];
+        $result = [];
 
-        if ($amiibo === null) {
-            return [];
+        foreach ($amiibos as $amiibo) {
+            $id = $amiibo['head'].$amiibo['tail'];
+
+            if (\in_array($id, $ids)) {
+                $result[$id] = $amiibo;
+            }
         }
 
-        $amiibo['characterId'] = $this->requestResourceIdByName('character', (string) $amiibo['character']);
-        $amiibo['typeId'] = $this->requestResourceIdByName('type', (string) $amiibo['type']);
+        $characters = \array_unique(\array_column($result, 'character'));
+        $characterIds = \array_map(
+            fn (string $name): string => $this->requestResourceIdByName('character', $name),
+            \array_combine($characters, $characters)
+        );
+        $types = \array_unique(\array_column($result, 'type'));
+        $typeIds = \array_map(
+            fn (string $name): string => $this->requestResourceIdByName('type', $name),
+            \array_combine($types, $types)
+        );
 
-        return $amiibo;
+        foreach ($result as &$amiibo) {
+            $amiibo['characterId'] = $characterIds[$amiibo['character']] ?? null;
+            $amiibo['typeId'] = $typeIds[$amiibo['type']] ?? null;
+        }
+
+        return $result;
     }
 
     public function getImage(string $url): ?ResponseInterface
@@ -119,6 +134,17 @@ class AmiiboApiClient
         }
 
         return $response;
+    }
+
+    public function getImageMimeType(string $url): ?string
+    {
+        $response = $this->client->sendRequest($this->requestFactory->createRequest('HEAD', $url));
+
+        if ($response->getStatusCode() < 200 || 300 <= $response->getStatusCode()) {
+            return null;
+        }
+
+        return $response->getHeaderLine('Content-Type') ?: null;
     }
 
     protected function requestResourceIdByName(string $resource, string $name): ?string

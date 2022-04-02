@@ -6,29 +6,27 @@ use Heptacom\HeptaConnect\Portal\Base\Builder\FlowComponent;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Packer\MediaPacker;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Packer\ProductPacker;
 use NiemandOnline\HeptaConnect\Portal\Amiibo\Support\AmiiboApiClient;
-use Psr\Http\Message\ResponseInterface;
 
 FlowComponent::explorer(Product::class)
     ->run(static fn (AmiiboApiClient $client): iterable => $client->getAmiiboIds());
 
 FlowComponent::emitter(Product::class)
-    ->run(static function(
-        string $id,
+    ->batch(static function(
+        iterable $externalIds,
         ProductPacker $productPacker,
         MediaPacker $mediaPacker,
         AmiiboApiClient $client
-    ): Product {
-        $amiibo = $client->getAmiibo($id);
-        $result = $productPacker->pack($amiibo);
+    ): iterable {
+        $rawAmiibos = $client->getAmiibos(\iterable_to_array($externalIds));
+        \array_walk($rawAmiibos, function (array &$amiibo) use ($client): void {
+            $imageUrl = $amiibo['image'] ?? null;
+            $mimeType = null;
 
-        $imageResponse = $client->getImage($amiibo['image']);
+            if ($imageUrl !== null) {
+                $mimeType = $client->getImageMimeType($imageUrl);
+            }
 
-        if ($imageResponse instanceof ResponseInterface) {
-            $image = $mediaPacker->pack($imageResponse);
-
-            $image->setPrimaryKey($amiibo['image']);
-            $result->attach($image);
-        }
-
-        return $result;
+            $amiibo['image_mimetype'] = $mimeType;
+        });
+        return \array_map([$productPacker, 'pack'], $rawAmiibos);
     });
