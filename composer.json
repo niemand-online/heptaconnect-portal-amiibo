@@ -16,8 +16,8 @@
     ],
     "require": {
         "php": ">=7.4",
-        "heptacom/heptaconnect-dataset-ecommerce": ">=0.4",
-        "heptacom/heptaconnect-portal-base": ">=0.4"
+        "heptacom/heptaconnect-dataset-ecommerce": ">=0.7",
+        "heptacom/heptaconnect-portal-base": ">=0.7"
     },
     "conflict": {
         "nikic/php-parser": "4.7.0"

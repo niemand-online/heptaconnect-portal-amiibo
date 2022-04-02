@@ -11,6 +11,16 @@ use Heptacom\HeptaConnect\Dataset\Ecommerce\Tax\TaxGroupRule;
 
 class ProductPacker
 {
+    private float $configFakePriceGross;
+
+    private float $configFakePriceTaxRate;
+
+    public function __construct(float $configFakePriceGross, float $configFakePriceTaxRate)
+    {
+        $this->configFakePriceGross = $configFakePriceGross;
+        $this->configFakePriceTaxRate = $configFakePriceTaxRate;
+    }
+
     public function pack(array $source): Product
     {
         $result = new Product();
@@ -30,8 +40,8 @@ class ProductPacker
 
         $price = new Price();
         $price->setPrimaryKey($result->getPrimaryKey());
-        $price->setGross(19.99);
-        $price->setNet(19.99 / 1.19);
+        $price->setGross($this->configFakePriceGross);
+        $price->setNet($this->configFakePriceGross / ((100 + $this->configFakePriceTaxRate) / 100.0));
         $price->setTaxStatus(Price::TAX_STATUS_GROSS);
 
         $result->getPrices()->push([$price]);
@@ -60,9 +70,9 @@ class ProductPacker
         $result = new TaxGroup();
         $rule = new TaxGroupRule();
 
-        $result->setPrimaryKey('19');
-        $rule->setPrimaryKey('19');
-        $rule->setRate(19);
+        $result->setPrimaryKey((string) $this->configFakePriceTaxRate);
+        $rule->setPrimaryKey((string) $this->configFakePriceTaxRate);
+        $rule->setRate($this->configFakePriceTaxRate);
         $result->getRules()->push([$rule]);
 
         return $result;
