@@ -48,7 +48,7 @@
     "extra": {
         "heptaconnect": {
             "portals": [
-                "NiemandOnline\\HeptaConnect\\Portal\\Amiibo\\Portal"
+                "NiemandOnline\\HeptaConnect\\Portal\\Amiibo\\AmiiboPortal"
             ]
         }
     }

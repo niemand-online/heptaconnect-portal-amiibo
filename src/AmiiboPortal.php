@@ -6,7 +6,7 @@ namespace NiemandOnline\HeptaConnect\Portal\Amiibo;
 use Heptacom\HeptaConnect\Portal\Base\Portal\Contract\PortalContract;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
-class Portal extends PortalContract
+class AmiiboPortal extends PortalContract
 {
     public const CONFIG_PREVIEW = 'preview';
 
