@@ -4,26 +4,25 @@ declare(strict_types=1);
 namespace NiemandOnline\HeptaConnect\Portal\Amiibo\Packer;
 
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Media\Media;
-use Heptacom\HeptaConnect\Portal\Base\Serialization\Contract\NormalizationRegistryContract;
-use Heptacom\HeptaConnect\Portal\Base\Serialization\Contract\SerializableStream;
-use Psr\Http\Message\ResponseInterface;
+use Heptacom\HeptaConnect\Portal\Base\File\FileReferenceFactoryContract;
+use Psr\Http\Message\UriInterface;
 
 class MediaPacker
 {
-    private NormalizationRegistryContract $normalizationRegistry;
+    private FileReferenceFactoryContract $file;
 
-    public function __construct(NormalizationRegistryContract $normalizationRegistry)
+    public function __construct(FileReferenceFactoryContract $file)
     {
-        $this->normalizationRegistry = $normalizationRegistry;
+        $this->file = $file;
     }
 
-    public function pack(ResponseInterface $response): Media
+    public function pack(UriInterface $imageUrl, string $imageMimetype): Media
     {
         $result = new Media();
-        $blob = new SerializableStream($response->getBody());
-
-        $result->setNormalizedStream($this->normalizationRegistry->getNormalizer($blob)->normalize($blob));
-        $result->setMimeType($response->getHeaderLine('Content-Type'));
+        $result->setPrimaryKey((string) $imageUrl);
+        $result->setFile($this->file->fromPublicUrl((string) $imageUrl));
+        $result->setFilename(\basename($imageUrl->getPath()));
+        $result->setMimeType($imageMimetype);
 
         return $result;
     }

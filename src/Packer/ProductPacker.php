@@ -3,20 +3,18 @@ declare(strict_types=1);
 
 namespace NiemandOnline\HeptaConnect\Portal\Amiibo\Packer;
 
-use Heptacom\HeptaConnect\Dataset\Ecommerce\Media\Media;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Price\Price;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Product\Category;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Product\Product;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Tax\TaxGroup;
 use Heptacom\HeptaConnect\Dataset\Ecommerce\Tax\TaxGroupRule;
-use Heptacom\HeptaConnect\Portal\Base\File\FileReferenceFactoryContract;
 use Psr\Http\Message\UriFactoryInterface;
 
 class ProductPacker
 {
     private UriFactoryInterface $uriFactory;
 
-    private FileReferenceFactoryContract $file;
+    private MediaPacker $mediaPacker;
 
     private float $configFakePriceGross;
 
@@ -24,12 +22,12 @@ class ProductPacker
 
     public function __construct(
         UriFactoryInterface $uriFactory,
-        FileReferenceFactoryContract $file,
+        MediaPacker $mediaPacker,
         float $configFakePriceGross,
         float $configFakePriceTaxRate
     ) {
         $this->uriFactory = $uriFactory;
-        $this->file = $file;
+        $this->mediaPacker = $mediaPacker;
         $this->configFakePriceGross = $configFakePriceGross;
         $this->configFakePriceTaxRate = $configFakePriceTaxRate;
     }
@@ -66,11 +64,7 @@ class ProductPacker
         $imageMimetype = $source['image_mimetype'];
 
         if ($imageMimetype !== null) {
-            $media = new Media();
-            $media->setFile($this->file->fromPublicUrl((string) $imageUrl));
-            $media->setFilename(\basename($imageUrl->getPath()));
-            $media->setMimeType($imageMimetype);
-            $result->getMedias()->push([$media]);
+            $result->getMedias()->push([$this->mediaPacker->pack($imageUrl, $imageMimetype)]);
         }
 
         return $result;
