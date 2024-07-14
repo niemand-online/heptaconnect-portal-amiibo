@@ -94,7 +94,19 @@ class AmiiboApiClient
 
     public function getAmiibos(array $ids): array
     {
-        $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
+        if (\count($ids) === 1) {
+            $id = \reset($ids);
+            $head = \substr($id, 0, 8);
+            $tail = \substr($id, 8, 8);
+
+            $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo', [
+                'head' => $head,
+                'tail' => $tail,
+            ]));
+        } else {
+            $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
+        }
+
         $amiibos = $this->unwrapResponse($this->client->sendRequest($request)) ?? [];
         $result = [];
 
