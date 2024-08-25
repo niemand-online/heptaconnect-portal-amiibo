@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NiemandOnline\HeptaConnect\Portal\Amiibo\Support;
@@ -17,8 +18,6 @@ class AmiiboApiClient
     private RequestFactoryInterface $requestFactory;
 
     private UriFactoryInterface $uriFactory;
-
-    private array $requestCache = [];
 
     private bool $configPreview;
 
@@ -42,7 +41,7 @@ class AmiiboApiClient
     {
         if ($this->configPreview) {
             $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
-            $amiibos = $this->cachedAndUnwrappedRequestExecution($request) ?? [];
+            $amiibos = $this->unwrappedRequestExecution($request) ?? [];
             $result = \array_unique(\array_column(\array_slice($amiibos, 0, $this->configPreviewLimit), 'character'));
 
             return \array_map(
@@ -58,7 +57,7 @@ class AmiiboApiClient
     {
         if ($this->configPreview) {
             $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
-            $amiibos = $this->cachedAndUnwrappedRequestExecution($request) ?? [];
+            $amiibos = $this->unwrappedRequestExecution($request) ?? [];
             $result = \array_unique(\array_column(\array_slice($amiibos, 0, $this->configPreviewLimit), 'type'));
 
             return \array_map(
@@ -83,10 +82,10 @@ class AmiiboApiClient
     public function getAmiiboIds(): array
     {
         $request = $this->requestFactory->createRequest('GET', $this->getUri('amiibo'));
-        $amiibos = $this->cachedAndUnwrappedRequestExecution($request) ?? [];
+        $amiibos = $this->unwrappedRequestExecution($request) ?? [];
 
         foreach ($amiibos as $amiibo) {
-            $result[] = $amiibo['head'].$amiibo['tail'];
+            $result[] = $amiibo['head'] . $amiibo['tail'];
         }
 
         return $this->configPreview ? \array_slice($result, 0, $this->configPreviewLimit, true) : $result;
@@ -111,7 +110,7 @@ class AmiiboApiClient
         $result = [];
 
         foreach ($amiibos as $amiibo) {
-            $id = $amiibo['head'].$amiibo['tail'];
+            $id = $amiibo['head'] . $amiibo['tail'];
 
             if (\in_array($id, $ids)) {
                 $result[$id] = $amiibo;
@@ -141,7 +140,7 @@ class AmiiboApiClient
     {
         $response = $this->client->sendRequest($this->requestFactory->createRequest('GET', $url));
 
-        if ($response->getStatusCode() < 200 || 300 <= $response->getStatusCode()) {
+        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
             return null;
         }
 
@@ -152,7 +151,7 @@ class AmiiboApiClient
     {
         $response = $this->client->sendRequest($this->requestFactory->createRequest('HEAD', $url));
 
-        if ($response->getStatusCode() < 200 || 300 <= $response->getStatusCode()) {
+        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
             return null;
         }
 
@@ -165,7 +164,7 @@ class AmiiboApiClient
             'name' => $name,
         ]));
 
-        return $this->cachedAndUnwrappedRequestExecution($request)[0]['key'] ?? null;
+        return $this->unwrappedRequestExecution($request)[0]['key'] ?? null;
     }
 
     protected function requestResource(string $resource, string $key): array
@@ -174,45 +173,31 @@ class AmiiboApiClient
             'key' => $key,
         ]));
 
-        return $this->cachedAndUnwrappedRequestExecution($request) ?? [];
+        return $this->unwrappedRequestExecution($request) ?? [];
     }
 
     protected function requestKeyValue(string $resource): array
     {
         $request = $this->requestFactory->createRequest('GET', $this->getUri($resource));
 
-        return \array_column($this->cachedAndUnwrappedRequestExecution($request) ?? [], 'name', 'key');
+        return \array_column($this->unwrappedRequestExecution($request) ?? [], 'name', 'key');
     }
 
-    protected function cachedAndUnwrappedRequestExecution(RequestInterface $request): ?array
+    protected function unwrappedRequestExecution(RequestInterface $request): ?array
     {
-        $url = (string) $request->getUri();
-        $cacheKey = \json_encode([
-            'url' => $url,
-            'header' => $request->getHeaders(),
-            'method' => $request->getMethod(),
-        ]);
-
-        if (isset($this->requestCache[$cacheKey])) {
-            return $this->requestCache[$cacheKey];
-        }
-
-        $response = $this->unwrapResponse($this->client->sendRequest($request));
-
-        if ($response !== null) {
-            $this->requestCache[$cacheKey] = $response;
-        }
+        $response = $this->client->sendRequest($request);
+        $response = $this->unwrapResponse($response);
 
         return $response;
     }
 
     protected function unwrapResponse(ResponseInterface $response): ?array
     {
-        if (300 <= $response->getStatusCode() || $response->getStatusCode() < 200) {
+        if ($response->getStatusCode() >= 300 || $response->getStatusCode() < 200) {
             return null;
         }
 
-        $data = \json_decode($response->getBody()->getContents(), true, 5, \JSON_THROW_ON_ERROR);
+        $data = \json_decode((string) $response->getBody(), true, 5, \JSON_THROW_ON_ERROR);
 
         if (!\is_array($data) || $data === []) {
             return null;
@@ -231,7 +216,7 @@ class AmiiboApiClient
     {
         return $this->uriFactory
             ->createUri('https://amiiboapi.com/')
-            ->withPath(\rtrim('api/'.$path, '/').'/')
+            ->withPath(\rtrim('api/' . $path, '/') . '/')
             ->withQuery(\http_build_query($params));
     }
 }
