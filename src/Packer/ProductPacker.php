@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace NiemandOnline\HeptaConnect\Portal\Amiibo\Packer;
@@ -16,19 +17,15 @@ class ProductPacker
 
     private MediaPacker $mediaPacker;
 
-    private float $configFakePriceGross;
-
     private float $configFakePriceTaxRate;
 
     public function __construct(
         UriFactoryInterface $uriFactory,
         MediaPacker $mediaPacker,
-        float $configFakePriceGross,
         float $configFakePriceTaxRate
     ) {
         $this->uriFactory = $uriFactory;
         $this->mediaPacker = $mediaPacker;
-        $this->configFakePriceGross = $configFakePriceGross;
         $this->configFakePriceTaxRate = $configFakePriceTaxRate;
     }
 
@@ -39,10 +36,10 @@ class ProductPacker
     {
         $result = new Product();
 
-        $result->setPrimaryKey($source['head'].$source['tail']);
-        $result->setNumber($source['head'].$source['tail']);
+        $result->setPrimaryKey($source['head'] . $source['tail']);
+        $result->setNumber($source['head'] . $source['tail']);
         $result->setActive(true);
-        $result->setGtin($source['head'].$source['tail']);
+        $result->setGtin($source['head'] . $source['tail']);
         $result->setInventory(0);
         $result->getName()->setFallback($source['name']);
         $result->setTaxGroup($this->getTaxGroup());
@@ -54,8 +51,8 @@ class ProductPacker
 
         $price = new Price();
         $price->setPrimaryKey($result->getPrimaryKey());
-        $price->setGross($this->configFakePriceGross);
-        $price->setNet($this->configFakePriceGross / ((100 + $this->configFakePriceTaxRate) / 100.0));
+        $price->setGross($this->getGrossPrice($result));
+        $price->setNet($price->getGross() / ((100 + $this->configFakePriceTaxRate) / 100.0));
         $price->setTaxStatus(Price::TAX_STATUS_GROSS);
 
         $result->getPrices()->push([$price]);
@@ -97,5 +94,17 @@ class ProductPacker
         $result->getRules()->push([$rule]);
 
         return $result;
+    }
+
+    private function getGrossPrice(Product $result): float
+    {
+        $primaryKey = $result->getPrimaryKey();
+        $hash = \crc32($primaryKey);
+        $absolute = (string) \abs($hash);
+        $padded = \str_pad($absolute, 4, '0');
+        $number = (int) \substr($padded, 0, 4);
+        $price = \round($number / 100, 2);
+
+        return $price;
     }
 }
