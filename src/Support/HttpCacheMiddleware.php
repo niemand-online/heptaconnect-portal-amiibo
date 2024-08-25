@@ -15,6 +15,12 @@ final class HttpCacheMiddleware implements HttpClientMiddlewareInterface
 
     public function process(RequestInterface $request, ClientInterface $handler): ResponseInterface
     {
+        $isCacheable = \in_array(\strtoupper($request->getMethod()), ['HEAD', 'GET'], true);
+
+        if (!$isCacheable) {
+            return $handler->sendRequest($request);
+        }
+
         $cacheKey = (string) $request->getUri();
 
         if (isset($this->cache[$cacheKey])) {
