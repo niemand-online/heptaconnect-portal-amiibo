@@ -162,6 +162,16 @@ class AmiiboApiClient
         return $response->getHeaderLine('Content-Type') ?: null;
     }
 
+    public function lastUpdated(): \DateTimeInterface
+    {
+        $request = $this->requestFactory->createRequest('GET', $this->getUri('lastupdated'));
+
+        $response = $this->client->sendRequest($request);
+        $data = \json_decode((string) $response->getBody(), true);
+
+        return new \DateTimeImmutable($data['lastUpdated']);
+    }
+
     protected function requestResourceIdByName(string $resource, string $name): ?string
     {
         $request = $this->requestFactory->createRequest('GET', $this->getUri($resource, [
