@@ -14,15 +14,19 @@ class AmiiboPortal extends PortalContract
 
     public const CONFIG_FAKE_PRICE_TAX_RATE = 'fake_price_tax_rate';
 
+    public const CONFIG_BASE_URL = 'base_url';
+
     public function getConfigurationTemplate(): OptionsResolver
     {
         return parent::getConfigurationTemplate()->setDefaults([
             self::CONFIG_PREVIEW => true,
             self::CONFIG_PREVIEW_LIMIT => 10,
             self::CONFIG_FAKE_PRICE_TAX_RATE => 20.0,
+            self::CONFIG_BASE_URL => 'https://amiiboapi.org',
         ])
             ->setAllowedTypes(self::CONFIG_PREVIEW, 'bool')
             ->setAllowedTypes(self::CONFIG_PREVIEW_LIMIT, 'int')
-            ->setAllowedTypes(self::CONFIG_FAKE_PRICE_TAX_RATE, 'float');
+            ->setAllowedTypes(self::CONFIG_FAKE_PRICE_TAX_RATE, 'float')
+            ->setAllowedTypes(self::CONFIG_BASE_URL, 'string');
     }
 }

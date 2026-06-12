@@ -23,18 +23,22 @@ class AmiiboApiClient
 
     private int $configPreviewLimit;
 
+    private string $configBaseUrl;
+
     public function __construct(
         ClientInterface $client,
         RequestFactoryInterface $requestFactory,
         UriFactoryInterface $uriFactory,
         bool $configPreview,
-        int $configPreviewLimit
+        int $configPreviewLimit,
+        string $configBaseUrl
     ) {
         $this->client = $client;
         $this->requestFactory = $requestFactory;
         $this->uriFactory = $uriFactory;
         $this->configPreview = $configPreview;
         $this->configPreviewLimit = $configPreviewLimit;
+        $this->configBaseUrl = $configBaseUrl;
     }
 
     public function getCharacterIds(): array
@@ -215,7 +219,7 @@ class AmiiboApiClient
     protected function getUri(string $path, array $params = []): UriInterface
     {
         return $this->uriFactory
-            ->createUri('https://amiiboapi.com/')
+            ->createUri($this->configBaseUrl)
             ->withPath(\rtrim('api/' . $path, '/') . '/')
             ->withQuery(\http_build_query($params));
     }
